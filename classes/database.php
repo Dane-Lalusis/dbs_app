@@ -95,6 +95,51 @@
             $con =$this->opencon();
             return $con->query("SELECT * from borrower_address")->fetchAll();
         }
+    
+
+    function insertBooks($book_title, $book_isbn, $book_publication_year, $book_edition, $book_publisher){
+        $con = $this->opencon();
+
+        try{
+            $con->beginTransaction();
+            $stmt = $con->prepare('INSERT INTO books (book_title, book_isbn, book_publication_year, book_edition, book_publisher) VALUES (?, ?, ?, ?, ?)');
+            $stmt->execute([$book_title, $book_isbn, $book_publication_year, $book_edition, $book_publisher]);
+            $book_id = $con->lastInsertId();
+            $con->commit();
+
+            return true;
+
+        }catch(PDOException $e){
+            if($con->inTransaction()){
+                $con->rollBack();
+            }
+        }
     }
 
-?>
+    function viewCopy(){
+        $con =$this->opencon();
+        return $con->query("SELECT * from book_copy")->fetchAll();
+
+    }
+    function viewBooks(){
+        $con =$this->opencon();
+        return $con->query("SELECT * from Books")->fetchAll();
+    }
+
+    function viewCopies(){
+        $com = $this->opencon();
+        return $com->query("SELECT
+    books.book_id,
+    books.book_title,
+    books.book_isbn,
+    books.book_publication_year,
+    books.book_publisher,
+    COUNT(book_copy.copy_id) AS Copies,
+    SUM(book_copy.bc_status = 'Available') AS Available_Copies
+FROM
+    books
+JOIN book_copy ON book_copy.book_id = books.book_id
+GROUP BY
+    1;");
+    }
+}

@@ -1,13 +1,58 @@
+<?php
+require_once('../classes/database.php');
+$con = new database();
+
+$allusers = $con->viewBooks(); 
+
+$booksCreateStatus = null;
+$booksCreateMessage = '';
+
+if(isset($_POST['save_book'])){
+    
+    $book_title = $_POST['book_title'];
+    $book_isbn = $_POST['book_isbn'];
+    $book_publication_year = $_POST['book_publication_year'];
+    $book_edition = $_POST['book_edition'];
+    $book_publisher = $_POST['book_publisher'];
+    
+    try {
+    
+        $con->insertBooks($book_title, $book_isbn, $book_publication_year, $book_edition, $book_publisher);
+
+if(isset($_POST['add_Copy'])){
+    
+    $books = $_POST['books'];
+    $bc_status = $_POST['bc_status'];
+
+    try {
+
+    $book_copy = $con->insertCopy($books, $bc_status);
+
+    $booksCreateStatus = 'success';
+    $booksCreateMessage = 'Books created successfully.';
+
+
+    } catch (Exception $e){
+
+      $booksCreateStatus = 'error';
+      $booksrCreateMessage = 'Error Creating Books.';
+
+    }
+  }
+?>
+
+
 <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Books — Admin</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
-  <link rel="stylesheet" href="../assets/css/style.css">
-
+  <title>Books — Admin</title>  
   <link rel="stylesheet" href="../bootstrap-5.3.3-dist/css/bootstrap.css">
+  <link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet"href="../sweetalert/dist/sweetalert2.css">
+
+
 </head>
 <body>
 <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
@@ -62,7 +107,7 @@
             <label class="form-label">Publisher</label>
             <input class="form-control" name="book_publisher" placeholder="optional">
           </div>
-          <button class="btn btn-primary w-100" type="submit">Save Book</button>
+          <button name="save_book" button class="btn btn-primary w-100" type="submit">Save Book</button>
         </form>
       </div>
 
@@ -75,11 +120,10 @@
             <label class="form-label">Book</label>
             <select class="form-select" name="book_id" required>
               <option value="">Select book</option>
-              <option value="1">Noli Me Tangere</option>
-              <option value="2">El Filibusterismo</option>
-              <option value="3">Mga Ibong Mandaragit</option>
-              <option value="4">Smaller and Smaller Circles</option>
-              <option value="5">Dekada ’70</option>
+            <?php foreach($allbooks as $books){
+                echo '<option value="' .$books['book_id'].'">'.$books['book_title'].'</option>';
+            }
+            ?>
             </select>
           </div>
           <div class="mb-3">
@@ -138,19 +182,27 @@
                   <button class="btn btn-sm btn-outline-danger">Delete</button>
                 </td>
               </tr>
-              <tr>
-                <td>4</td>
-                <td>Smaller and Smaller Circles</td>
-                <td>9789712721768</td>
-                <td>2002</td>
-                <td>Ateneo de Manila University Press</td>
-                <td>2</td>
-                <td><span class="badge text-bg-warning">1</span></td>
-                <td class="text-end">
-                  <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editBookModal">Edit</button>
-                  <button class="btn btn-sm btn-outline-danger">Delete</button>
-                </td>
-              </tr>
+            </tbody>
+            <?php
+            $viewcopies = $con->viewCopies();
+            foreach($viewcopies as $vw){
+
+            echo'<tr>';
+            echo'<td>'.$vw['book_id'].'</td>';
+            echo'<td>'.$vw['book_title'].'</td>';
+            echo'<td>'.$vw['book_isbn'].'</td>';  
+            echo'<td>'.$vw['book_publication_year'].'</td>';
+            echo'<td>'.$vw['Copies'].'</td>'; 
+            echo'<td>'.$vw['Available_Copies'].'</td>'; 
+            echo' <td class="text-end">';
+            echo' <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editBookModal">Edit</button>';
+            echo' <button class="btn btn-sm btn-outline-danger">Delete</button>';
+            echo' </td>';
+            echo' </tr>';
+            }
+
+            ?>
+
             </tbody>
           </table>
         </div>
@@ -251,6 +303,35 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src>"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"</script> 
+
+<script src="../bootstrap-5.3.3-dist/js/bootstrap.bundle.min.js"></script>
+<script src="../sweetalert/dist/sweetalert2.js"></script>
+
+<script>
+
+  const createStatus = <?php echo json_encode($booksCreateStatus)?>;
+  const createMessage = <?php echo json_encode($booksCreateMessage)?>;
+  const createMessage = <?php echo json_encode($CopyCreateMessage)?>;
+
+
+  if(createStatus == 'success'){
+  Swal.fire({
+  title: "success",
+  icon: "Success",
+  text: createMessage,
+  confirmButtonText: "OK",
+  	});
+  } else if (createStatus == 'error'){
+    Swal.fire({
+    title: "error",
+    icon: "Error",
+    text: createMessage,
+    confirmButtonText: "OK",
+  	});
+  }
+
+</script>
+
 </body>
 </html>
